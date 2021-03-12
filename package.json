@@ -1,0 +1,38 @@
+{
+  "name": "posthtml-bemify",
+  "version": "1.0.0",
+  "description": "Bemify – PostHTML plugin to transform custom elements tags into HTML with BEM methodology class names",
+  "main": "dist/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "babel src -d dist",
+    "test": "jest"
+  },
+  "author": "Sergei Frolov",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.13.10",
+    "@babel/preset-env": "^7.13.10",
+    "babel-plugin-add-module-exports": "^1.0.4",
+    "core-js": "^3.9.1",
+    "html-tags": "^3.1.0",
+    "jest": "^26.6.3",
+    "posthtml": "^0.15.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayoujin/posthtml-bemify.git"
+  },
+  "keywords": [
+    "bem",
+    "custom elements",
+    "posthtml",
+    "html"
+  ],
+  "bugs": {
+    "url": "https://github.com/mayoujin/posthtml-bemify/issues"
+  },
+  "homepage": "https://github.com/mayoujin/posthtml-bemify#readme"
+}
