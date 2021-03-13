@@ -3,7 +3,7 @@ This Posthtml plugin transform custom tags with specific attributes to BEM-like 
 
 ## Install
 ```
-npm i mayoujin/posthtml-bemify#v1 -D
+npm i mayoujin/posthtml-bemify#v1.0.0 -D
 ```
 
 ## Usage
