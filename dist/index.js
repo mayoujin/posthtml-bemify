@@ -63,12 +63,14 @@ var createClassBuilder = function createClassBuilder(_ref2) {
 };
 
 var DEFAULT_OPTIONS = {
+  mode: 'by-attributes',
   blockTag: "div",
   elementTag: "div",
   skipTags: ["div", "span", "p", "a", "i", "b", "strong"],
   tagsMap: {},
   classesMap: {},
-  bem: BEM_SEP
+  bem: BEM_SEP,
+  ignoreTransformTag: /^(w|i)/
 };
 
 var _default = function _default(options) {
@@ -78,6 +80,8 @@ var _default = function _default(options) {
 
   options = _extends({}, DEFAULT_OPTIONS, options);
   var buildClass = createClassBuilder(options);
+  var isWithoutAttributes = options.mode === 'no-attributes';
+  var isBem = options.bem != null && typeof options.bem === 'object';
   return function (tree) {
     var process = function process(node, parent) {
       var nodeTag = node.tag;
@@ -91,10 +95,15 @@ var _default = function _default(options) {
         return node;
       }
 
+      var shouldTransformTag = options.ignoreTransformTag.test(nodeTag) === false;
       node = _extends({
         attrs: {}
       }, node);
-      node.tag = node.attrs.tag || options.tagsMap[nodeTag] || TAGS[TAGS.indexOf(nodeTag)];
+
+      if (shouldTransformTag) {
+        node.tag = node.attrs.tag || options.tagsMap[nodeTag] || TAGS[TAGS.indexOf(nodeTag)];
+      }
+
       var isBlock = (SERVICE_ATTRS.BLOCK in node.attrs);
       var mods = Object.entries(node.attrs).filter(function (_ref4) {
         var name = _ref4[0];
@@ -126,7 +135,7 @@ var _default = function _default(options) {
         return [[value, ""]];
       });
 
-      if (parent && parent.component) {
+      if (isBem && parent && parent.component) {
         var customElementName = node.attrs[SERVICE_ATTRS.ELEMENT];
         var elemName = typeof options.classesMap[nodeTag] === "function" ? options.classesMap[nodeTag](parent, options) : nodeTag;
         var elementOf = node.attrs[SERVICE_ATTRS.ELEMENT_OF] ? node.attrs[SERVICE_ATTRS.ELEMENT_OF].split("|") : parent.component.name;
@@ -140,7 +149,7 @@ var _default = function _default(options) {
         };
       }
 
-      if (isBlock) {
+      if (isBlock || isBem === false) {
         var _blockName = (node.attrs[SERVICE_ATTRS.BLOCK] || nodeTag).split("|");
 
         node.attrs["class"] = [buildClass(_blockName, null, mods)].concat(node.attrs["class"] || []).join(" ");
@@ -170,7 +179,10 @@ var _default = function _default(options) {
       return node;
     };
 
-    tree.match(MATCHERS, process);
+    var matchers = isWithoutAttributes ? {
+      tag: /([A-Z]\w+|([a-z]+-[a-z]+))/
+    } : MATCHERS;
+    tree.match(matchers, process);
     return tree;
   };
 };

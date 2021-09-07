@@ -59,24 +59,30 @@ const createClassBuilder = ({ bem }) => {
 };
 
 const DEFAULT_OPTIONS = {
+  mode: 'by-attributes',
   blockTag: "div",
   elementTag: "div",
-  skipTags: ["div", "span", "p", "a", "i", "b", "strong"],
+  skipTags: [
+    "div", "span", "p", "a", "i", "b", "strong"
+  ],
   tagsMap: {},
   classesMap: {},
   bem: BEM_SEP,
+  ignoreTransformTag: /^(w|i)/
 };
 
 export default (options = DEFAULT_OPTIONS) => {
   options = { ...DEFAULT_OPTIONS, ...options };
 
   const buildClass = createClassBuilder(options);
+  const isWithoutAttributes = options.mode === 'no-attributes';
+  const isBem = options.bem != null && typeof options.bem === 'object';
 
   return (tree) => {
     const process = (node, parent) => {
       const nodeTag = node.tag;
-
       if (nodeTag === undefined || options.skipTags.includes(nodeTag)) {
+
         return node;
       }
 
@@ -85,12 +91,16 @@ export default (options = DEFAULT_OPTIONS) => {
         return node;
       }
 
+      const shouldTransformTag = options.ignoreTransformTag.test(nodeTag) === false;
+
       node = { attrs: {}, ...node };
 
-      node.tag =
-        node.attrs.tag ||
-        options.tagsMap[nodeTag] ||
-        TAGS[TAGS.indexOf(nodeTag)];
+      if (shouldTransformTag) {
+        node.tag =
+          node.attrs.tag ||
+          options.tagsMap[nodeTag] ||
+          TAGS[TAGS.indexOf(nodeTag)];
+      }
 
       const isBlock = SERVICE_ATTRS.BLOCK in node.attrs;
 
@@ -111,7 +121,7 @@ export default (options = DEFAULT_OPTIONS) => {
           return [[value, ""]];
         });
 
-      if (parent && parent.component) {
+      if (isBem && parent && parent.component) {
         const customElementName = node.attrs[SERVICE_ATTRS.ELEMENT];
         const elemName =
           typeof options.classesMap[nodeTag] === "function"
@@ -143,7 +153,7 @@ export default (options = DEFAULT_OPTIONS) => {
         };
       }
 
-      if (isBlock) {
+      if (isBlock || isBem === false) {
         const blockName = (node.attrs[SERVICE_ATTRS.BLOCK] || nodeTag).split(
           "|"
         );
@@ -177,7 +187,8 @@ export default (options = DEFAULT_OPTIONS) => {
       return node;
     };
 
-    tree.match(MATCHERS, process);
+    const matchers = isWithoutAttributes ? { tag: /([A-Z]\w+|([a-z]+-[a-z]+))/ } : MATCHERS;
+    tree.match(matchers, process);
 
     return tree;
   };
