@@ -187,7 +187,10 @@ export default (options = DEFAULT_OPTIONS) => {
       return node;
     };
 
-    const matchers = isWithoutAttributes ? { tag: /([A-Z]\w+|([a-z]+-[a-z]+))/ } : MATCHERS;
+    const matchers = isWithoutAttributes
+      ? { tag: /([A-Z]\w+|([a-z]+-?))/ }
+      : MATCHERS;
+
     tree.match(matchers, process);
 
     return tree;

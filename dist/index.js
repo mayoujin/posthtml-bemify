@@ -180,7 +180,7 @@ var _default = function _default(options) {
     };
 
     var matchers = isWithoutAttributes ? {
-      tag: /([A-Z]\w+|([a-z]+-[a-z]+))/
+      tag: /([A-Z]\w+|([a-z]+-?))/
     } : MATCHERS;
     tree.match(matchers, process);
     return tree;

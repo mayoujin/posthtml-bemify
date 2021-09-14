@@ -12,7 +12,7 @@ npm i mayoujin/posthtml-bemify#v1.0.0 -D
 // posthtml.config.js
 module.exports = {
   plugins: {
-    "posthtml-custom-elements": {
+    "posthtml-bemify": {
       skipTags: ["svg"],
     },
   }
