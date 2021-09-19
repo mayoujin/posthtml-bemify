@@ -2,8 +2,10 @@
 This Posthtml plugin transform custom tags with specific attributes to BEM-like HTML
 
 ## Install
-```
-npm i mayoujin/posthtml-bemify#v1.0.0 -D
+```sh
+npm i mayoujin/posthtml-bemify#1.0.0 --save-dev
+// or
+npm i posthtml-bemify@1 --save-dev
 ```
 
 ## Usage
@@ -220,28 +222,32 @@ Transformed to:
 
 ## Options
 
-```javascript
+```js
 {
     /**
     * Default block HTML tag
+    * @type {string}
     * @default
     */
     blockTag: 'div',
     
     /**
     * Default element HTML tag
+    * @type {string}
     * @default
     */
     elementTag: 'div',
     
     /**
     * Skip HTML tags list
+    * @type {string[]}
     * @default
     */
     skipTags: ['b', 'strong', 'i', 'span', 'div', 'section'],
 
     /**
     * Overrides bem separators
+    * @type {{ blockPrefix: string, element: string, modifier: string, modifierValue: string }|false} 
     * @default
     */
     bem: {
@@ -249,7 +255,22 @@ Transformed to:
         element: "__",
         modifier: "--",
         modifierValue: "_"
-    }
+    },
+
+    /**
+     * Overrides bem separators
+     * @type { tag: /^[a-z-]{3}$/ }
+     * @default
+     */
+    ignoreTransform: null,
+      
+    /**
+     * Overrides bem separators
+     * @type {{ tag: RegExp }|null}
+     * @default
+     */
+    matcher: { tag: /^[a-z-]{3}$/ }
+
 }
 ```
 

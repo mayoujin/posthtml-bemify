@@ -63,14 +63,16 @@ var createClassBuilder = function createClassBuilder(_ref2) {
 };
 
 var DEFAULT_OPTIONS = {
-  mode: 'by-attributes',
   blockTag: "div",
   elementTag: "div",
   skipTags: ["div", "span", "p", "a", "i", "b", "strong"],
   tagsMap: {},
   classesMap: {},
   bem: BEM_SEP,
-  ignoreTransformTag: /^(w|i)/
+  ignoreTransform: null,
+  matcher: {
+    tag: /^[a-z-]{3}$/
+  }
 };
 
 var _default = function _default(options) {
@@ -80,9 +82,10 @@ var _default = function _default(options) {
 
   options = _extends({}, DEFAULT_OPTIONS, options);
   var buildClass = createClassBuilder(options);
-  var isWithoutAttributes = options.mode === 'no-attributes';
   var isBem = options.bem != null && typeof options.bem === 'object';
   return function (tree) {
+    var _options$matcher;
+
     var process = function process(node, parent) {
       var nodeTag = node.tag;
 
@@ -95,7 +98,14 @@ var _default = function _default(options) {
         return node;
       }
 
-      var shouldTransformTag = options.ignoreTransformTag.test(nodeTag) === false;
+      var shouldTransformTag = options.ignoreTransform != null ? Object.entries(options.ignoreTransform).every(function (_ref4) {
+        var _node$prop;
+
+        var prop = _ref4[0],
+            re = _ref4[1];
+        var value = (_node$prop = node[prop]) != null ? _node$prop : node.attrs[prop];
+        return re.test(value);
+      }) : false;
       node = _extends({
         attrs: {}
       }, node);
@@ -105,12 +115,12 @@ var _default = function _default(options) {
       }
 
       var isBlock = (SERVICE_ATTRS.BLOCK in node.attrs);
-      var mods = Object.entries(node.attrs).filter(function (_ref4) {
-        var name = _ref4[0];
+      var mods = Object.entries(node.attrs).filter(function (_ref5) {
+        var name = _ref5[0];
         return name.startsWith(SERVICE_ATTRS.MODIFIER);
-      }).flatMap(function (_ref5) {
-        var name = _ref5[0],
-            value = _ref5[1];
+      }).flatMap(function (_ref6) {
+        var name = _ref6[0],
+            value = _ref6[1];
         node.attrs[name] = undefined;
         var mods = name.split(".").slice(1);
 
@@ -138,8 +148,7 @@ var _default = function _default(options) {
       if (isBem && parent && parent.component) {
         var customElementName = node.attrs[SERVICE_ATTRS.ELEMENT];
         var elemName = typeof options.classesMap[nodeTag] === "function" ? options.classesMap[nodeTag](parent, options) : nodeTag;
-        var elementOf = node.attrs[SERVICE_ATTRS.ELEMENT_OF] ? node.attrs[SERVICE_ATTRS.ELEMENT_OF].split("|") : parent.component.name;
-        var blockName = elementOf;
+        var blockName = node.attrs[SERVICE_ATTRS.ELEMENT_OF] ? node.attrs[SERVICE_ATTRS.ELEMENT_OF].split("|") : parent.component.name;
         node.attrs["class"] = [buildClass(blockName, customElementName || elemName, isBlock ? [] : mods)].concat(node.attrs["class"] || []).join(" ");
         node.tag = node.tag || options.elementTag;
         node.component = {
@@ -179,9 +188,9 @@ var _default = function _default(options) {
       return node;
     };
 
-    var matchers = isWithoutAttributes ? {
-      tag: /([A-Z]\w+|([a-z]+-?))/
-    } : MATCHERS;
+    var matchers = isBem ? MATCHERS : (_options$matcher = options.matcher) != null ? _options$matcher : {
+      tag: /^[a-z-]{3}$/
+    };
     tree.match(matchers, process);
     return tree;
   };

@@ -1,14 +1,18 @@
 {
   "name": "posthtml-bemify",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Bemify – PostHTML plugin to transform custom elements tags into HTML with BEM methodology class names",
   "main": "dist/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
+    "prepublish": "npm run build",
     "build": "babel src -d dist",
     "test": "jest"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
   },
   "author": "Sergei Frolov",
   "license": "ISC",

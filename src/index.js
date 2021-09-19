@@ -59,7 +59,6 @@ const createClassBuilder = ({ bem }) => {
 };
 
 const DEFAULT_OPTIONS = {
-  mode: 'by-attributes',
   blockTag: "div",
   elementTag: "div",
   skipTags: [
@@ -68,14 +67,14 @@ const DEFAULT_OPTIONS = {
   tagsMap: {},
   classesMap: {},
   bem: BEM_SEP,
-  ignoreTransformTag: /^(w|i)/
+  ignoreTransform: null,
+  matcher: { tag: /^[a-z-]{3}$/ }
 };
 
 export default (options = DEFAULT_OPTIONS) => {
   options = { ...DEFAULT_OPTIONS, ...options };
 
   const buildClass = createClassBuilder(options);
-  const isWithoutAttributes = options.mode === 'no-attributes';
   const isBem = options.bem != null && typeof options.bem === 'object';
 
   return (tree) => {
@@ -91,7 +90,12 @@ export default (options = DEFAULT_OPTIONS) => {
         return node;
       }
 
-      const shouldTransformTag = options.ignoreTransformTag.test(nodeTag) === false;
+      const shouldTransformTag = options.ignoreTransform != null
+        ? Object.entries(options.ignoreTransform).every(([ prop, re ]) => {
+          const value = node[prop] ?? node.attrs[prop];
+          return re.test(value);
+        })
+        : false;
 
       node = { attrs: {}, ...node };
 
@@ -128,11 +132,9 @@ export default (options = DEFAULT_OPTIONS) => {
             ? options.classesMap[nodeTag](parent, options)
             : nodeTag;
 
-        const elementOf = node.attrs[SERVICE_ATTRS.ELEMENT_OF]
+        const blockName = node.attrs[SERVICE_ATTRS.ELEMENT_OF]
           ? node.attrs[SERVICE_ATTRS.ELEMENT_OF].split("|")
           : parent.component.name;
-
-        const blockName = elementOf;
 
         node.attrs.class = [
           buildClass(
@@ -187,9 +189,9 @@ export default (options = DEFAULT_OPTIONS) => {
       return node;
     };
 
-    const matchers = isWithoutAttributes
-      ? { tag: /([A-Z]\w+|([a-z]+-?))/ }
-      : MATCHERS;
+    const matchers = isBem
+      ? MATCHERS
+      : options.matcher ?? { tag: /^[a-z-]{3}$/ };
 
     tree.match(matchers, process);
 
