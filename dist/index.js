@@ -1,11 +1,9 @@
 "use strict";
 
 exports.__esModule = true;
-exports["default"] = void 0;
+exports["default"] = exports.createClassBuilder = exports.createBemClassBuilder = void 0;
 
 var _htmlTags = _interopRequireDefault(require("html-tags"));
-
-var _attrs, _attrs2;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -20,11 +18,6 @@ var SERVICE_ATTRS = {
   SKIP: "bem:skip",
   SKIP_CHILDREN: "bem:skip.children"
 };
-var MATCHERS = [{
-  attrs: (_attrs = {}, _attrs[SERVICE_ATTRS.BLOCK] = "", _attrs)
-}, {
-  attrs: (_attrs2 = {}, _attrs2[SERVICE_ATTRS.BLOCK] = true, _attrs2)
-}];
 var BEM_SEP = {
   blockPrefix: "",
   element: "__",
@@ -32,8 +25,11 @@ var BEM_SEP = {
   modifierValue: "_"
 };
 
-var createBemClassBuilder = function createBemClassBuilder(_ref) {
-  var bem = _ref.bem;
+var createBemClassBuilder = function createBemClassBuilder(_temp) {
+  var _ref = _temp === void 0 ? {} : _temp,
+      _ref$bem = _ref.bem,
+      bem = _ref$bem === void 0 ? BEM_SEP : _ref$bem;
+
   return function (block, elem, modName, modVal) {
     elem = block ? elem : null;
     modName = elem || block ? modName : null;
@@ -44,8 +40,13 @@ var createBemClassBuilder = function createBemClassBuilder(_ref) {
   };
 };
 
-var createClassBuilder = function createClassBuilder(_ref2) {
-  var bem = _ref2.bem;
+exports.createBemClassBuilder = createBemClassBuilder;
+
+var createClassBuilder = function createClassBuilder(_temp2) {
+  var _ref2 = _temp2 === void 0 ? {} : _temp2,
+      _ref2$bem = _ref2.bem,
+      bem = _ref2$bem === void 0 ? BEM_SEP : _ref2$bem;
+
   var bemClassBuilder = createBemClassBuilder({
     bem: bem
   });
@@ -62,6 +63,7 @@ var createClassBuilder = function createClassBuilder(_ref2) {
   };
 };
 
+exports.createClassBuilder = createClassBuilder;
 var DEFAULT_OPTIONS = {
   blockTag: "div",
   elementTag: "div",
@@ -69,10 +71,11 @@ var DEFAULT_OPTIONS = {
   tagsMap: {},
   classesMap: {},
   bem: BEM_SEP,
-  ignoreTransform: null,
-  matcher: {
-    tag: /^[a-z-]{3}$/
-  }
+  // attrs: SERVICE_ATTRS,
+  ignoreTransformTag: null,
+  matcher: SERVICE_ATTRS,
+  // { tag: /^[a-z-]{3}$/ },
+  nodeVisitor: null
 };
 
 var _default = function _default(options) {
@@ -81,11 +84,18 @@ var _default = function _default(options) {
   }
 
   options = _extends({}, DEFAULT_OPTIONS, options);
+
+  var matcher = _extends({}, SERVICE_ATTRS, options.matcher);
+
   var buildClass = createClassBuilder(options);
+  var nodeVisitor = options.nodeVisitor != null ? options.nodeVisitor : function (node, _ref4) {
+    var b = _ref4.b,
+        e = _ref4.e,
+        m = _ref4.m;
+    node.attrs["class"] = [buildClass(b, e, m)].concat(node.attrs["class"] || []).join(" ");
+  };
   var isBem = options.bem != null && typeof options.bem === 'object';
   return function (tree) {
-    var _options$matcher;
-
     var process = function process(node, parent) {
       var nodeTag = node.tag;
 
@@ -93,16 +103,16 @@ var _default = function _default(options) {
         return node;
       }
 
-      if (node.attrs && SERVICE_ATTRS.SKIP in node.attrs) {
-        node.attrs[SERVICE_ATTRS.SKIP] = undefined;
+      if (node.attrs && matcher.SKIP in node.attrs) {
+        node.attrs[matcher.SKIP] = undefined;
         return node;
       }
 
-      var shouldTransformTag = options.ignoreTransform != null ? Object.entries(options.ignoreTransform).every(function (_ref4) {
+      var ignoreTransformTag = options.ignoreTransformTag != null ? Object.entries(options.ignoreTransformTag).every(function (_ref5) {
         var _node$prop;
 
-        var prop = _ref4[0],
-            re = _ref4[1];
+        var prop = _ref5[0],
+            re = _ref5[1];
         var value = (_node$prop = node[prop]) != null ? _node$prop : node.attrs[prop];
         return re.test(value);
       }) : false;
@@ -110,17 +120,17 @@ var _default = function _default(options) {
         attrs: {}
       }, node);
 
-      if (shouldTransformTag) {
+      if (ignoreTransformTag === false) {
         node.tag = node.attrs.tag || options.tagsMap[nodeTag] || TAGS[TAGS.indexOf(nodeTag)];
       }
 
-      var isBlock = (SERVICE_ATTRS.BLOCK in node.attrs);
-      var mods = Object.entries(node.attrs).filter(function (_ref5) {
-        var name = _ref5[0];
-        return name.startsWith(SERVICE_ATTRS.MODIFIER);
-      }).flatMap(function (_ref6) {
-        var name = _ref6[0],
-            value = _ref6[1];
+      var isBlock = (matcher.BLOCK in node.attrs);
+      var mods = Object.entries(node.attrs).filter(function (_ref6) {
+        var name = _ref6[0];
+        return name.includes(matcher.MODIFIER);
+      }).flatMap(function (_ref7) {
+        var name = _ref7[0],
+            modValue = _ref7[1];
         node.attrs[name] = undefined;
         var mods = name.split(".").slice(1);
 
@@ -132,24 +142,28 @@ var _default = function _default(options) {
           });
         }
 
-        var modsVals = value.split(".").slice(1);
+        var modsValues = modValue.split(".").slice(1);
 
-        if (modsVals.length) {
-          return modsVals.filter(function (v) {
+        if (modsValues.length > 0) {
+          return modsValues.filter(function (v) {
             return !!v;
           }).map(function (v) {
             return [v, ""];
           });
         }
 
-        return [[value, ""]];
+        return modValue;
       });
 
       if (isBem && parent && parent.component) {
-        var customElementName = node.attrs[SERVICE_ATTRS.ELEMENT];
+        var customElementName = node.attrs[matcher.ELEMENT];
         var elemName = typeof options.classesMap[nodeTag] === "function" ? options.classesMap[nodeTag](parent, options) : nodeTag;
-        var blockName = node.attrs[SERVICE_ATTRS.ELEMENT_OF] ? node.attrs[SERVICE_ATTRS.ELEMENT_OF].split("|") : parent.component.name;
-        node.attrs["class"] = [buildClass(blockName, customElementName || elemName, isBlock ? [] : mods)].concat(node.attrs["class"] || []).join(" ");
+        var blockName = node.attrs[matcher.ELEMENT_OF] ? node.attrs[matcher.ELEMENT_OF].split("|") : parent.component.name;
+        nodeVisitor(node, {
+          b: blockName,
+          e: customElementName || elemName,
+          m: isBlock ? null : mods.length > 0 ? mods : null
+        });
         node.tag = node.tag || options.elementTag;
         node.component = {
           name: parent.component.name,
@@ -158,10 +172,14 @@ var _default = function _default(options) {
         };
       }
 
-      if (isBlock || isBem === false) {
-        var _blockName = (node.attrs[SERVICE_ATTRS.BLOCK] || nodeTag).split("|");
+      if (isBlock || isBem === false || ignoreTransformTag) {
+        var _blockName = (node.attrs[matcher.BLOCK] || nodeTag).split("|");
 
-        node.attrs["class"] = [buildClass(_blockName, null, mods)].concat(node.attrs["class"] || []).join(" ");
+        nodeVisitor(node, {
+          b: _blockName,
+          e: null,
+          m: mods
+        });
         node.tag = node.tag || options.blockTag;
         node.component = {
           name: _blockName
@@ -170,12 +188,12 @@ var _default = function _default(options) {
 
       node.tag = node.tag || nodeTag;
       node.attrs.tag = undefined;
-      delete node.attrs[SERVICE_ATTRS.ELEMENT];
-      delete node.attrs[SERVICE_ATTRS.BLOCK];
-      delete node.attrs[SERVICE_ATTRS.ELEMENT_OF];
+      delete node.attrs[matcher.ELEMENT];
+      delete node.attrs[matcher.BLOCK];
+      delete node.attrs[matcher.ELEMENT_OF];
 
-      if (node.attrs[SERVICE_ATTRS.SKIP_CHILDREN]) {
-        delete node.attrs[SERVICE_ATTRS.SKIP];
+      if (node.attrs[matcher.SKIP_CHILDREN]) {
+        delete node.attrs[matcher.SKIP];
         return node;
       }
 
@@ -188,14 +206,23 @@ var _default = function _default(options) {
       return node;
     };
 
-    var matchers = isBem ? MATCHERS : (_options$matcher = options.matcher) != null ? _options$matcher : {
-      tag: /^[a-z-]{3}$/
-    };
+    var matchers = [];
+
+    if (isBem) {
+      var _attrs, _attrs2;
+
+      matchers.push({
+        attrs: (_attrs = {}, _attrs[matcher.BLOCK] = "", _attrs)
+      }, {
+        attrs: (_attrs2 = {}, _attrs2[matcher.BLOCK] = true, _attrs2)
+      });
+    } else {
+      matchers.push(matcher.BLOCK);
+    }
+
     tree.match(matchers, process);
     return tree;
   };
 };
 
 exports["default"] = _default;
-module.exports = exports.default;
-module.exports.default = exports.default;

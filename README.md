@@ -258,18 +258,32 @@ Transformed to:
     },
 
     /**
-     * Overrides bem separators
-     * @type { tag: /^[a-z-]{3}$/ }
+     * Pattern to ignore node tag transformation
+     *
+     * @type {{ tag?: /^[a-z-]{3}$/ } | null}
      * @default
      */
-    ignoreTransform: null,
+    ignoreTransformTag: null,
       
     /**
-     * Overrides bem separators
-     * @type {{ tag: RegExp }|null}
+     * Match target nodes
+     * 
+     * @type {{ BLOCK?: { tag: RegExp } | string, ELEMENT?: string | MODIFIER?: string} | null }
      * @default
      */
-    matcher: { tag: /^[a-z-]{3}$/ }
+    matcher: { 
+      BLOCK: 'bem:b' | { tag: /^[a-z-]{3}$/ },
+      ELEMENT: 'bem:e',
+      MODIFIER: 'bem:m'
+    },
+  
+    /**
+     * Custom node visitor 
+     *
+     * @type {function(node: { tag: string, attrs: object }, { b: string, e: string, m: string } ): void|null}
+     * @default
+     */
+    nodeVisitor({ tag: /^[a-z-]{3}$/ })
 
 }
 ```
