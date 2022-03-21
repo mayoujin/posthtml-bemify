@@ -49,6 +49,8 @@ const DEFAULT_OPTIONS = {
   blockTag: "div",
   elementTag: "div",
   skipTags: [
+  ],
+  ignoreTags: [
     "div", "span", "p", "a", "i", "b", "strong"
   ],
   tagsMap: {},
@@ -125,26 +127,30 @@ export default (options = DEFAULT_OPTIONS) => {
           return modValue;
         });
 
-      if (isBem && parent && parent.component) {
+      if (isBem && parent != null && parent.component != null) {
         const customElementName = node.attrs[matcher.ELEMENT];
-        const elemName =
+        const mapElemName =
           typeof options.classesMap[nodeTag] === "function"
             ? options.classesMap[nodeTag](parent, options)
-            : nodeTag;
+            : options.classesMap[nodeTag];
+        const elemName = customElementName ?? mapElemName ?? nodeTag;
 
-        const blockName = node.attrs[matcher.ELEMENT_OF]
-          ? node.attrs[matcher.ELEMENT_OF].split("|")
-          : parent.component.name;
+        if (options.ignoreTags.includes(elemName) === false) {
+          const blockName = node.attrs[matcher.ELEMENT_OF]
+            ? node.attrs[matcher.ELEMENT_OF].split("|")
+            : parent.component.name;
 
-        nodeVisitor(node, {
-          b: blockName,
-          e: customElementName || elemName,
-          m: isBlock
-            ? null
-            : mods.length > 0 ? mods : null
-        });
+          nodeVisitor(node, {
+            b: blockName,
+            e: elemName,
+            m: isBlock
+              ? null
+              : mods.length > 0 ? mods : null
+          });
 
-        node.tag = node.tag || options.elementTag;
+          node.tag = node.tag || options.elementTag;
+
+        }
 
         node.component = {
           name: parent.component.name,
@@ -153,22 +159,24 @@ export default (options = DEFAULT_OPTIONS) => {
         };
       }
 
-      if (isBlock || isBem === false || ignoreTransformTag) {
+      if (isBlock || isBem === false || ignoreTransformTag != null) {
         const blockName = (node.attrs[matcher.BLOCK] || nodeTag).split(
           "|"
         );
 
-        nodeVisitor(node, {
-          b: blockName,
-          e: null,
-          m: mods
-        });
+        if (options.ignoreTags.includes(blockName[0]) === false) {
+          nodeVisitor(node, {
+            b: blockName,
+            e: null,
+            m: mods
+          });
 
-        node.tag = node.tag || options.blockTag;
+          node.tag = node.tag || options.blockTag;
 
-        node.component = {
-          name: blockName,
-        };
+          node.component = {
+            name: blockName,
+          };
+        }
       }
 
       node.tag = node.tag || nodeTag;
@@ -178,12 +186,13 @@ export default (options = DEFAULT_OPTIONS) => {
       delete node.attrs[matcher.BLOCK];
       delete node.attrs[matcher.ELEMENT_OF];
 
-      if (node.attrs[matcher.SKIP_CHILDREN]) {
-        delete node.attrs[matcher.SKIP];
+      if (matcher.SKIP_CHILDREN in node.attrs) {
+        node.attrs[matcher.SKIP_CHILDREN] = undefined;
+        node.component = undefined;
         return node;
       }
 
-      if (node.content) {
+      if (node.content != null) {
         node.content = node.content.map((child) => process(child, node));
       }
 

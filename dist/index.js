@@ -67,7 +67,8 @@ exports.createClassBuilder = createClassBuilder;
 var DEFAULT_OPTIONS = {
   blockTag: "div",
   elementTag: "div",
-  skipTags: ["div", "span", "p", "a", "i", "b", "strong"],
+  skipTags: [],
+  ignoreTags: ["div", "span", "p", "a", "i", "b", "strong"],
   tagsMap: {},
   classesMap: {},
   bem: BEM_SEP,
@@ -155,16 +156,23 @@ var _default = function _default(options) {
         return modValue;
       });
 
-      if (isBem && parent && parent.component) {
+      if (isBem && parent != null && parent.component != null) {
+        var _ref8;
+
         var customElementName = node.attrs[matcher.ELEMENT];
-        var elemName = typeof options.classesMap[nodeTag] === "function" ? options.classesMap[nodeTag](parent, options) : nodeTag;
-        var blockName = node.attrs[matcher.ELEMENT_OF] ? node.attrs[matcher.ELEMENT_OF].split("|") : parent.component.name;
-        nodeVisitor(node, {
-          b: blockName,
-          e: customElementName || elemName,
-          m: isBlock ? null : mods.length > 0 ? mods : null
-        });
-        node.tag = node.tag || options.elementTag;
+        var mapElemName = typeof options.classesMap[nodeTag] === "function" ? options.classesMap[nodeTag](parent, options) : options.classesMap[nodeTag];
+        var elemName = (_ref8 = customElementName != null ? customElementName : mapElemName) != null ? _ref8 : nodeTag;
+
+        if (options.ignoreTags.includes(elemName) === false) {
+          var blockName = node.attrs[matcher.ELEMENT_OF] ? node.attrs[matcher.ELEMENT_OF].split("|") : parent.component.name;
+          nodeVisitor(node, {
+            b: blockName,
+            e: elemName,
+            m: isBlock ? null : mods.length > 0 ? mods : null
+          });
+          node.tag = node.tag || options.elementTag;
+        }
+
         node.component = {
           name: parent.component.name,
           elem: nodeTag,
@@ -172,18 +180,20 @@ var _default = function _default(options) {
         };
       }
 
-      if (isBlock || isBem === false || ignoreTransformTag) {
+      if (isBlock || isBem === false || ignoreTransformTag != null) {
         var _blockName = (node.attrs[matcher.BLOCK] || nodeTag).split("|");
 
-        nodeVisitor(node, {
-          b: _blockName,
-          e: null,
-          m: mods
-        });
-        node.tag = node.tag || options.blockTag;
-        node.component = {
-          name: _blockName
-        };
+        if (options.ignoreTags.includes(_blockName[0]) === false) {
+          nodeVisitor(node, {
+            b: _blockName,
+            e: null,
+            m: mods
+          });
+          node.tag = node.tag || options.blockTag;
+          node.component = {
+            name: _blockName
+          };
+        }
       }
 
       node.tag = node.tag || nodeTag;
@@ -192,12 +202,13 @@ var _default = function _default(options) {
       delete node.attrs[matcher.BLOCK];
       delete node.attrs[matcher.ELEMENT_OF];
 
-      if (node.attrs[matcher.SKIP_CHILDREN]) {
-        delete node.attrs[matcher.SKIP];
+      if (matcher.SKIP_CHILDREN in node.attrs) {
+        node.attrs[matcher.SKIP_CHILDREN] = undefined;
+        node.component = undefined;
         return node;
       }
 
-      if (node.content) {
+      if (node.content != null) {
         node.content = node.content.map(function (child) {
           return process(child, node);
         });
