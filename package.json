@@ -1,6 +1,6 @@
 {
   "name": "posthtml-bemify",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "Bemify – PostHTML plugin to transform custom elements tags into HTML with BEM methodology class names",
   "main": "dist/index.js",
   "directories": {
