@@ -159,7 +159,7 @@ export default (options = DEFAULT_OPTIONS) => {
         };
       }
 
-      if (isBlock || isBem === false || ignoreTransformTag != null) {
+      if (isBlock || isBem === false || ignoreTransformTag === true) {
         const blockName = (node.attrs[matcher.BLOCK] || nodeTag).split(
           "|"
         );

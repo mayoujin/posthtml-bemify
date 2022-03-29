@@ -180,7 +180,7 @@ var _default = function _default(options) {
         };
       }
 
-      if (isBlock || isBem === false || ignoreTransformTag != null) {
+      if (isBlock || isBem === false || ignoreTransformTag === true) {
         var _blockName = (node.attrs[matcher.BLOCK] || nodeTag).split("|");
 
         if (options.ignoreTags.includes(_blockName[0]) === false) {
